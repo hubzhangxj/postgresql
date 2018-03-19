@@ -1,0 +1,13 @@
+---
+# tasks file for mysql
+
+- import_tasks: pre_postgres.yml
+
+- import_tasks: build_postgres.yml
+
+- import_tasks: install_postgres.yml
+
+- import_tasks: init_postgres.yml
+
+- import_tasks: test_postgres.yml
+

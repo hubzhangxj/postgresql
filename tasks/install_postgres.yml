@@ -1,0 +1,45 @@
+---
+# tasks file for mysql
+
+- name: remove all files in dst
+  file:
+    path: "{{postgres_dir }}/data"
+    state: absent
+
+- name: crate the des directory
+  file:
+    path: "{{ postgres_dir }}/data"
+    owner: postgres
+    group: postgres
+    mode: 0600
+    state: directory
+
+- name: initialize the postgresql database
+  shell: |
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ postgres_dir }}/app/lib
+    {{ postgres_dir }}/app/bin/initdb -D {{ postgres_dir }}/data
+  become: true
+  become_user: postgres
+
+- name: copy postgresql configuration files
+  template:
+    src: postgresql.conf.j2
+    dest: "{{ postgres_dir }}/data/postgresql.conf"
+    mode: 0600
+    owner: postgres
+    group: postgres
+
+- name: start the postgresql database
+  shell: |
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ postgres_dir }}/app/lib
+    {{ postgres_dir }}/app/bin/pg_ctl start -D {{ postgres_dir }}/data
+  become: true
+  become_user: postgres
+
+- name: copy benchamarkSQL propg
+  template:
+    src: props.pg.j2
+    dest: "{{ root_dir }}/tpcc/run/props.pg"
+    mode: 0600
+    owner: root
+    group: root

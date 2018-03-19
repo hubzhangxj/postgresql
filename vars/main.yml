@@ -1,0 +1,9 @@
+---
+# vars file for mysql
+
+
+root_dir: /root/postgres_test
+
+postgres_dir: /u01
+
+postgres_host: 192.168.1.162

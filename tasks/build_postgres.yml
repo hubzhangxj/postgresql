@@ -1,0 +1,75 @@
+---
+# tasks file for mysql
+- group:
+    name: postgres
+    state: present
+- name: create user postgres
+  user:
+    name: postgres
+    group: postgres
+
+- name: create data directory
+  file:
+    path: "{{ postgres_dir }}"
+    owner: postgres
+    group: postgres
+    mode: 0700
+    state: directory
+    
+- name: create app directory
+  file:
+    path: "{{ postgres_dir }}/app"
+    owner: postgres
+    group: postgres
+    mode: 0700
+    state: directory
+
+- name: Kill postgresql server on ARM64 Server
+  shell: |
+    ps -ef | grep postgres | grep -v grep | awk '{print "kill -9 " $2}' | sh 
+    sleep 60
+
+- name: unmount the u01 directory to /dev/nvme0n1
+  mount:
+    path: "{{ postgres_dir }}"
+    src:  /dev/nvme0n1
+    fstype: ext4
+    state: unmounted
+
+- name: Create a ext4 filesystem on /dev/nvme0n1
+  filesystem:
+    fstype: ext4
+    dev: /dev/nvme0n1
+    force: yes
+
+- name: mount the u01 directory to /dev/nvme0n1
+  mount:
+    path: "{{ postgres_dir }}"
+    src:  /dev/nvme0n1
+    fstype: ext4
+    opts: defaults,nobarrier,noatime,nodiratime,max_batch_time=0,discard 
+    state: mounted
+
+- name: unarchive all souce codes
+  unarchive: 
+    src: "{{ item.src }}" 
+    dest: "{{ root_dir }}/{{ item.dst }}" 
+    extra_opts: [--strip-components=1]
+    mode: 0777
+    owner: root
+  with_items:
+    - { src: '{{ root_dir }}/postgresql-10.3.tar.gz', dst: 'postgres' }
+    - { src: '{{ root_dir }}/benchmarksql-5.0.tar.gz', dst: 'tpcc' }
+   
+    
+- name: install postgresql
+  shell: |
+    
+    ./configure -prefix={{ postgres_dir }}/app  --enable-thread
+    make -sj
+    make install -sj
+    
+    chown postgres:postgres -R {{ postgres_dir }}
+    
+  args:
+    chdir: "{{ root_dir }}/postgres"

@@ -1,0 +1,16 @@
+---
+# tasks file for mysql
+
+- name: Modify the root user password
+  shell: |
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ postgres_dir }}/app/lib
+    {{ postgres_dir }}/app/bin/psql -d postgres -c "alter user postgres password 'postgres@123'"
+  become: true
+  become_user: postgres
+
+- name: prepare the benchmark database
+  shell: |
+  
+    ./runDatabaseBuild.sh props.pg
+  args:
+    chdir: "{{ root_dir }}/tpcc/run"

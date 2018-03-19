@@ -1,0 +1,51 @@
+---
+# tasks file for mysql
+
+- name: Install pre-some packages
+  yum: name={{ item }} state=present
+  with_items:
+    - flex
+    - bison
+    - java
+  when: ansible_os_family == "RedHat"
+  
+- name: Install pre-some packages in Ubuntu
+  apt: name={{ item }} state=present
+  with_items:
+    - flex
+    - bison
+    - java
+  when: ansible_os_family == "Debian"
+
+- name: remove all files in dst
+  file:
+    path: "{{ root_dir }}"
+    state: absent
+
+- name: crate the des directory
+  file:
+    path: "{{ root_dir }}"
+    owner: root
+    group: root
+    mode: 0777
+    state: directory
+    
+- name: crate the tpcc script directory
+  file:
+    path: "{{ root_dir }}/{{ item }}"
+    owner: root
+    group: root
+    mode: 0777
+    state: directory
+  with_items:
+    - postgres
+    - tpcc
+    
+- name: download the source code
+  get_url: url={{ item.url }} dest="{{ root_dir }}"
+  with_items:
+    - { url: 'https://ftp.postgresql.org/pub/source/v10.3/postgresql-10.3.tar.gz' }
+    - { url: 'https://jdbc.postgresql.org/download/postgresql-42.2.1.jar' }
+    
+- name: copy the benchmarkSQL source code
+  copy: src=benchmarksql-5.0.tar.gz dest="{{ root_dir }}" mode=0600
